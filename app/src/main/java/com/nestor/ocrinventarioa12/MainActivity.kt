@@ -131,6 +131,7 @@ class MainActivity : AppCompatActivity() {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
 
                     runOnUiThread {
+                        vibratePhone()
                         OCRProcessor.processImage(
                             this@MainActivity,
                             photoFile,
