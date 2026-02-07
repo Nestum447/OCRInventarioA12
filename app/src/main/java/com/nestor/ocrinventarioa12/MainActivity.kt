@@ -97,7 +97,9 @@ class MainActivity : AppCompatActivity() {
                 }
 
             imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+
                 .build()
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
