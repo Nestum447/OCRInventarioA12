@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
+    <!-- ====== SECCIÓN CÁMARA ====== -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -22,12 +23,14 @@
 
         <Button
             android:id="@+id/btnCapture"
-            android:layout_width="120dp"
-            android:layout_height="50dp"
+            android:layout_width="130dp"
+            android:layout_height="55dp"
             android:text="Capturar"
             android:layout_gravity="bottom|center_horizontal"
             android:layout_margin="24dp"/>
     </FrameLayout>
+
+    <!-- ====== BOTONES CONTROL ====== -->
 
     <Button
         android:id="@+id/btnDeleteAll"
@@ -35,9 +38,18 @@
         android:layout_height="wrap_content"
         android:text="Borrar Todo"/>
 
+    <Button
+        android:id="@+id/btnExport"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Exportar CSV"/>
+
+    <!-- ====== LISTA INVENTARIO ====== -->
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
         android:layout_width="match_parent"
-        android:layout_height="200dp"/>
+        android:layout_height="220dp"
+        android:padding="8dp"/>
 
 </LinearLayout>
