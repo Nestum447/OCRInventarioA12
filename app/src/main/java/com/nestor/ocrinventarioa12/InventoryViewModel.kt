@@ -23,4 +23,10 @@ class InventoryViewModel(application: Application) :
             dao.deleteAll()
         }
     }
+
+    fun delete(item: InventoryEntity) {
+        viewModelScope.launch(Dispatchers.IO) {
+            dao.delete(item)
+        }
+    }
 }
