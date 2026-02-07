@@ -2,7 +2,7 @@ package com.nestor.ocrinventarioa12
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Bundle
+import android.os.*
 import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -45,7 +45,6 @@ class MainActivity : AppCompatActivity() {
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        // Configuración RecyclerView
         val adapter = InventoryAdapter { item ->
             viewModel.delete(item)
         }
@@ -97,9 +96,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
             imageCapture = ImageCapture.Builder()
-                
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
-
                 .build()
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
@@ -131,7 +128,9 @@ class MainActivity : AppCompatActivity() {
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
 
                     runOnUiThread {
-                        vibratePhone()
+
+                        vibratePhone() // 🔥 Vibración al capturar
+
                         OCRProcessor.processImage(
                             this@MainActivity,
                             photoFile,
@@ -146,6 +145,24 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         )
+    }
+
+    // 📳 FUNCIÓN DE VIBRACIÓN
+    private fun vibratePhone() {
+
+        val vibrator = getSystemService(VIBRATOR_SERVICE) as Vibrator
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(
+                VibrationEffect.createOneShot(
+                    150, // duración en milisegundos
+                    VibrationEffect.DEFAULT_AMPLITUDE
+                )
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(150)
+        }
     }
 
     private fun allPermissionsGranted(): Boolean {
