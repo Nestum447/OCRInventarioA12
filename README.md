@@ -205,7 +205,7 @@ Persistencia estructurada
 Resolución de problemas reales
 
 
-🏁 Valor para Empresas y Reclutadores
+🏁 Valor para Empresas
 
 Este proyecto demuestra:
 
