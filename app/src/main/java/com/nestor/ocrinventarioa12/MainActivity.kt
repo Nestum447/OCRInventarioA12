@@ -3,13 +3,16 @@ package com.nestor.ocrinventarioa12
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.widget.Button
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import android.widget.Button
-import androidx.camera.view.PreviewView
+import androidx.lifecycle.ViewModelProvider
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import java.io.File
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -20,6 +23,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var overlayView: OverlayView
     private lateinit var imageCapture: ImageCapture
     private lateinit var cameraExecutor: ExecutorService
+    private lateinit var viewModel: InventoryViewModel
+
+    companion object {
+        private const val REQUEST_CODE_PERMISSIONS = 101
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,9 +35,34 @@ class MainActivity : AppCompatActivity() {
 
         previewView = findViewById(R.id.previewView)
         overlayView = findViewById(R.id.overlayView)
+
         val btnCapture: Button = findViewById(R.id.btnCapture)
+        val btnDeleteAll: Button = findViewById(R.id.btnDeleteAll)
+        val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
+
+        viewModel = ViewModelProvider(this)[InventoryViewModel::class.java]
 
         cameraExecutor = Executors.newSingleThreadExecutor()
+
+        // RecyclerView setup
+        val adapter = InventoryAdapter { item ->
+            viewModel.delete(item)
+        }
+
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = adapter
+
+        viewModel.allItems.observe(this) {
+            adapter.submitList(it)
+        }
+
+        btnDeleteAll.setOnClickListener {
+            viewModel.deleteAll()
+        }
+
+        btnCapture.setOnClickListener {
+            takePhoto()
+        }
 
         if (allPermissionsGranted()) {
             startCamera()
@@ -37,12 +70,8 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.CAMERA),
-                101
+                REQUEST_CODE_PERMISSIONS
             )
-        }
-
-        btnCapture.setOnClickListener {
-            takePhoto()
         }
     }
 
@@ -56,7 +85,9 @@ class MainActivity : AppCompatActivity() {
                 it.setSurfaceProvider(previewView.surfaceProvider)
             }
 
-            imageCapture = ImageCapture.Builder().build()
+            imageCapture = ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build()
 
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
@@ -72,10 +103,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun takePhoto() {
-        val photoFile = File(
-            cacheDir,
-            "temp.jpg"
-        )
+
+        val photoFile = File(cacheDir, "temp.jpg")
 
         val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
@@ -85,12 +114,15 @@ class MainActivity : AppCompatActivity() {
             object : ImageCapture.OnImageSavedCallback {
 
                 override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                    OCRProcessor.processImage(
-                        this@MainActivity,
-                        photoFile,
-                        overlayView,
-                        getViewModel()
-                    )
+
+                    runOnUiThread {
+                        OCRProcessor.processImage(
+                            this@MainActivity,
+                            photoFile,
+                            overlayView,
+                            viewModel
+                        )
+                    }
                 }
 
                 override fun onError(exception: ImageCaptureException) {
@@ -100,16 +132,25 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun getViewModel(): InventoryViewModel {
-        return androidx.lifecycle.ViewModelProvider(this)
-            .get(InventoryViewModel::class.java)
-    }
-
     private fun allPermissionsGranted(): Boolean {
         return ContextCompat.checkSelfPermission(
             this,
             Manifest.permission.CAMERA
         ) == PackageManager.PERMISSION_GRANTED
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<String>,
+        grantResults: IntArray
+    ) {
+        if (requestCode == REQUEST_CODE_PERMISSIONS) {
+            if (allPermissionsGranted()) {
+                startCamera()
+            } else {
+                finish()
+            }
+        }
     }
 
     override fun onDestroy() {
