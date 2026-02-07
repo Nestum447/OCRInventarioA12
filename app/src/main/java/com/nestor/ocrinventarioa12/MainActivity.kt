@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var viewModel: InventoryViewModel
 
     companion object {
-        private const val REQUEST_CODE_PERMISSIONS = 101
+        private const val REQUEST_CODE_PERMISSIONS = 1001
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -38,13 +38,14 @@ class MainActivity : AppCompatActivity() {
 
         val btnCapture: Button = findViewById(R.id.btnCapture)
         val btnDeleteAll: Button = findViewById(R.id.btnDeleteAll)
+        val btnExport: Button = findViewById(R.id.btnExport)
         val recyclerView: RecyclerView = findViewById(R.id.recyclerView)
 
         viewModel = ViewModelProvider(this)[InventoryViewModel::class.java]
 
         cameraExecutor = Executors.newSingleThreadExecutor()
 
-        // RecyclerView setup
+        // Configuración RecyclerView
         val adapter = InventoryAdapter { item ->
             viewModel.delete(item)
         }
@@ -52,12 +53,18 @@ class MainActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
-        viewModel.allItems.observe(this) {
-            adapter.submitList(it)
+        viewModel.allItems.observe(this) { list ->
+            adapter.submitList(list)
         }
 
         btnDeleteAll.setOnClickListener {
             viewModel.deleteAll()
+        }
+
+        btnExport.setOnClickListener {
+            viewModel.allItems.value?.let { list ->
+                ExportUtil.exportToCSV(this, list)
+            }
         }
 
         btnCapture.setOnClickListener {
@@ -76,14 +83,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startCamera() {
+
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
         cameraProviderFuture.addListener({
+
             val cameraProvider = cameraProviderFuture.get()
 
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
+            val preview = Preview.Builder()
+                .build()
+                .also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
 
             imageCapture = ImageCapture.Builder()
                 .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
@@ -92,6 +103,7 @@ class MainActivity : AppCompatActivity() {
             val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
             cameraProvider.unbindAll()
+
             cameraProvider.bindToLifecycle(
                 this,
                 cameraSelector,
@@ -104,9 +116,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun takePhoto() {
 
-        val photoFile = File(cacheDir, "temp.jpg")
+        val photoFile = File(cacheDir, "temp_image.jpg")
 
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
+        val outputOptions =
+            ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
         imageCapture.takePicture(
             outputOptions,
@@ -144,6 +157,8 @@ class MainActivity : AppCompatActivity() {
         permissions: Array<String>,
         grantResults: IntArray
     ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
         if (requestCode == REQUEST_CODE_PERMISSIONS) {
             if (allPermissionsGranted()) {
                 startCamera()
