@@ -18,6 +18,11 @@ android {
         release {
             minifyEnabled false
         }
+buildFeatures {
+    viewBinding true
+}
+
+        
     }
 
     compileOptions {
