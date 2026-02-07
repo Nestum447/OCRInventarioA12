@@ -8,7 +8,9 @@
     <application
         android:allowBackup="true"
         android:label="OCR Inventario A12"
-        android:theme="@style/Theme.Material.Light.NoActionBar">
+
+        android:theme="@style/Theme.OCRInventarioA12">
+    
 
         <activity
             android:name=".MainActivity"
