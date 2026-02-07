@@ -51,7 +51,7 @@ object OCRProcessor {
             safeRect.height()
         )
 
-        // 🔥 4️⃣ Escalar x2 para mejorar lectura de números pequeños
+        // 🔥 4️⃣ Escalar x2 para mejorar lectura de texto pequeño
         val scaledBitmap = Bitmap.createScaledBitmap(
             croppedBitmap,
             croppedBitmap.width * 2,
@@ -59,7 +59,7 @@ object OCRProcessor {
             true
         )
 
-        // 🔥 5️⃣ Convertir a escala de grises (mejora OCR)
+        // 🔥 5️⃣ Convertir a escala de grises
         val processedBitmap = toGrayscale(scaledBitmap)
 
         val image = InputImage.fromBitmap(processedBitmap, 0)
@@ -68,10 +68,15 @@ object OCRProcessor {
         recognizer.process(image)
             .addOnSuccessListener { visionText ->
 
+                // ✅ Separación correcta por palabras
                 val cleanedText = visionText.textBlocks
-                    .joinToString(" ") { it.text }
-                    .replace("\n", " ")
-                    .replace("[^A-Za-z0-9]".toRegex(), "")
+                    .flatMap { it.lines }
+                    .joinToString("\n") { line ->
+                        line.elements.joinToString(" ") { element ->
+                            element.text
+                        }
+                    }
+                    .replace(Regex("\\s+"), " ")
                     .trim()
 
                 if (cleanedText.isNotEmpty()) {
@@ -83,7 +88,7 @@ object OCRProcessor {
             }
     }
 
-    // 🔄 Corregir rotación
+    // 🔄 Corregir rotación según EXIF
     private fun fixRotation(file: File, bitmap: Bitmap): Bitmap {
         val exif = ExifInterface(file.absolutePath)
         val orientation = exif.getAttributeInt(
@@ -105,7 +110,7 @@ object OCRProcessor {
         return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
     }
 
-    // 🎯 Escala de grises
+    // 🎯 Convertir a escala de grises (mejora contraste OCR)
     private fun toGrayscale(bitmap: Bitmap): Bitmap {
         val width = bitmap.width
         val height = bitmap.height
@@ -113,10 +118,13 @@ object OCRProcessor {
         val grayscale = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(grayscale)
         val paint = Paint()
+
         val colorMatrix = ColorMatrix()
         colorMatrix.setSaturation(0f)
+
         val filter = ColorMatrixColorFilter(colorMatrix)
         paint.colorFilter = filter
+
         canvas.drawBitmap(bitmap, 0f, 0f, paint)
 
         return grayscale
